@@ -37,71 +37,74 @@ with st.form("application_form"):
         audit_flag = 1 if audit_status == "Major Flags/Red Risks" else 0
         uploaded_file = st.file_uploader("Upload Audited Financials (PDF)", type=["pdf"])
 
+    # This is the end of the form block
     submitted = st.form_submit_button("Run AI Assessment")
 
-    if submitted:
-        if not name:
-            st.error("Please enter a Company Name.")
-        else:
-            pdf_text = extract_text_from_pdf(uploaded_file) if uploaded_file else ""
-            risk_prob = predict_risk(turnover, loan_amt, gst_score, audit_flag, c_score)
-            advice = generate_recommendation(turnover, loan_amt, gst_score, audit_flag)
+# --- OUTSIDE THE FORM ---
+# Notice this is un-indented all the way to the left edge!
+if submitted:
+    if not name:
+        st.error("Please enter a Company Name.")
+    else:
+        pdf_text = extract_text_from_pdf(uploaded_file) if uploaded_file else ""
+        risk_prob = predict_risk(turnover, loan_amt, gst_score, audit_flag, c_score)
+        advice = generate_recommendation(turnover, loan_amt, gst_score, audit_flag)
 
-            st.markdown("---")
-            col_res1, col_res2 = st.columns([1, 2])
-            
-            with col_res1:
-                if risk_prob > 0.6: 
-                    status = "Rejected"
-                    st.error(f"❌ REJECTED")
-                    st.metric("Risk Probability", f"{risk_prob:.1%}")
-                else:
-                    status = "Approved"
-                    st.success(f"✅ APPROVED")
-                    st.metric("Risk Probability", f"{risk_prob:.1%}")
-
-            with col_res2:
-                st.info(f"**AI Recommendation:** {advice}")
-
-            st.markdown("---")
-            st.subheader("🤖 GenAI Audit Report (Powered by Llama 3)")
-            
-            audit_summary = ""
-            if uploaded_file:
-                with st.spinner("Llama is analyzing the document for fraud/risks..."):
-                    audit_summary = analyze_with_llama(pdf_text)
-                    st.markdown(audit_summary)
+        st.markdown("---")
+        col_res1, col_res2 = st.columns([1, 2])
+        
+        with col_res1:
+            if risk_prob > 0.6: 
+                status = "Rejected"
+                st.error(f"❌ REJECTED")
+                st.metric("Risk Probability", f"{risk_prob:.1%}")
             else:
-                st.warning("⚠️ No document uploaded. Llama cannot perform text analysis.")
+                status = "Approved"
+                st.success(f"✅ APPROVED")
+                st.metric("Risk Probability", f"{risk_prob:.1%}")
 
-            save_application(name, turnover, loan_amt, risk_prob, status)
-            st.toast("Application Data & Risk Profile Saved.")
+        with col_res2:
+            st.info(f"**AI Recommendation:** {advice}")
 
-            # --- THE INNOVATION: EXPORT REPORT ---
-            st.markdown("---")
-            report_content = f"""
-            ENTERPRISE CREDIT EVALUATION REPORT
-            -----------------------------------
-            Company Name: {name}
-            Turnover: ₹{turnover}
-            Loan Requested: ₹{loan_amt}
-            GST Score: {gst_score}/10
-            Audit Flag: {'Major Risks' if audit_flag == 1 else 'Clean/Minor'}
-            
-            AI RISK ASSESSMENT
-            -----------------------------------
-            Final Status: {status}
-            Risk Probability: {risk_prob:.1%}
-            Rule Engine Advice: {advice}
-            
-            LLAMA 3 GEN-AI AUDIT SUMMARY
-            -----------------------------------
-            {audit_summary if uploaded_file else 'No document provided for GenAI analysis.'}
-            """
-            
-            st.download_button(
-                label="📥 Download Official AI Decision Report",
-                data=report_content,
-                file_name=f"{name.replace(' ', '_')}_Risk_Report.txt",
-                mime="text/plain"
-            )
+        st.markdown("---")
+        st.subheader("🤖 GenAI Audit Report (Powered by Llama 3)")
+        
+        audit_summary = ""
+        if uploaded_file:
+            with st.spinner("Llama is analyzing the document for fraud/risks..."):
+                audit_summary = analyze_with_llama(pdf_text)
+                st.markdown(audit_summary)
+        else:
+            st.warning("⚠️ No document uploaded. Llama cannot perform text analysis.")
+
+        save_application(name, turnover, loan_amt, risk_prob, status)
+        st.toast("Application Data & Risk Profile Saved.")
+
+        # --- THE INNOVATION: EXPORT REPORT ---
+        st.markdown("---")
+        report_content = f"""
+        ENTERPRISE CREDIT EVALUATION REPORT
+        -----------------------------------
+        Company Name: {name}
+        Turnover: ₹{turnover}
+        Loan Requested: ₹{loan_amt}
+        GST Score: {gst_score}/10
+        Audit Flag: {'Major Risks' if audit_flag == 1 else 'Clean/Minor'}
+        
+        AI RISK ASSESSMENT
+        -----------------------------------
+        Final Status: {status}
+        Risk Probability: {risk_prob:.1%}
+        Rule Engine Advice: {advice}
+        
+        LLAMA 3 GEN-AI AUDIT SUMMARY
+        -----------------------------------
+        {audit_summary if uploaded_file else 'No document provided for GenAI analysis.'}
+        """
+        
+        st.download_button(
+            label="📥 Download Official AI Decision Report",
+            data=report_content,
+            file_name=f"{name.replace(' ', '_')}_Risk_Report.txt",
+            mime="text/plain"
+        )
